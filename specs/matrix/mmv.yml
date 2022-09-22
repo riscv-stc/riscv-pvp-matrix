@@ -1,0 +1,444 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+
+  templates:
+    test_mmv_v_tr_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        la a3, test_{num}_data
+        vl1re{sew}.v v8, (a3)
+
+        msettypei a0, e8,false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / 8
+        la a1, {rs1_data}
+        li a2, {vlen} / 8
+
+        mle8.tr.r.c tr0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mmv.v.{tt}.{dim} v8, tr0, a0
+
+        la a3, test_{num}_data
+        vs1r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen}/{sew}), ({sew} / 8), 0;
+        .popsection
+        
+    test_mmv_v_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        la a3, test_{num}_data
+        vl4re{sew}.v v8, (a3)
+
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        li a2, {vlen} / 8
+
+        mle{eew}.xa.r.c acc0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mmv.v.{tt}.{dim} v8, acc0, a0
+
+        la a3, test_{num}_data
+        vs4r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen} * 4 /{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mwmv_v_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        la a3, test_{num}_data
+        vl4re{sew}.v v8, (a3)
+
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        li a2, {vlen} * 2 / 8
+
+        mle{eew}.xa.r.c acc0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mwmv.v.{tt}.{dim} v8, acc0, a0
+
+        la a3, test_{num}_data
+        vs4r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen} * 4 /{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mqmv_v_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        la a3, test_{num}_data
+        vl4re{sew}.v v8, (a3)
+
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        li a2, {vlen} * 4 / 8
+
+        mle{eew}.xa.r.c acc0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mqmv.v.{tt}.{dim} v8, acc0, a0
+
+        la a3, test_{num}_data
+        vs4r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen} * 4 /{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mfmv_v_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        la a3, test_{num}_data
+        vl4re{sew}.v v8, (a3)
+
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        li a2, {vlen} / 8
+
+        mfle{eew}.xa.r.c acc0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mfmv.v.{tt}.{dim} v8, acc0, a0
+
+        la a3, test_{num}_data
+        vs4r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen} * 4 /{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mfwmv_v_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        la a3, test_{num}_data
+        vl4re{sew}.v v8, (a3)
+
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        li a2, {vlen} * 2 / 8
+
+        mfle{eew}.xa.r.c acc0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mfwmv.v.{tt}.{dim} v8, acc0, a0
+
+        la a3, test_{num}_data
+        vs4r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen} * 4 /{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mfqmv_v_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        la a3, test_{num}_data
+        vl4re{sew}.v v8, (a3)
+
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        li a2, {vlen} * 4 / 8
+
+        mfle{eew}.xa.r.c acc0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mfqmv.v.{tt}.{dim} v8, acc0, a0
+
+        la a3, test_{num}_data
+        vs4r.v v8, (a3)
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({vlen} * 4 /{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mmv_tr_v_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        la a1, {rs1_data}
+        vl1re8.v v8, (a1)
+        
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mmv.tr.v.{tt}.{dim} tr0, v8, a0
+
+        la a3, test_{num}_data
+        msettypei a0, e8,false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / 8
+        li a2, {vlen} / 8
+        mse8.tr.r.c tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}/{sew}), ({sew} / 8), 0;
+        .popsection
+
+    test_mmv_acc_v_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        la a1, {rs1_data}
+        vl4re8.v v8, (a1)
+        
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mmv.xa.v.{tt}.{dim} acc0, v8, a0
+
+        la a3, test_{num}_data
+        msettypei a0, e8,false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / 8
+        li a2, {vlen} * 4/ 8
+        mse32.xa.r.c acc0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen} * 4 /{sew}), ({sew} / 8), 0;
+        .popsection
+        
+    test_mwmv_acc_v_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        la a1, {rs1_data}
+        vl4re8.v v8, (a1)
+        
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mwmv.xa.v.{tt}.{dim} acc0, v8, a0
+
+        la a3, test_{num}_data
+        msettypei a0, e8,false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/ 8
+        li a2, {vlen} * 4 / 8
+        mse32.xa.r.c acc0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen} * 4 /{sew}), ({sew} / 8), 0;
+        .popsection
+
+    test_mqmv_acc_v_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        la a1, {rs1_data}
+        vl4re8.v v8, (a1)
+        
+        msettypei a0, e{sew},false,false,maccq
+        msettile{dim}i a0, {tile_len}
+        li a0, {slice}
+        mqmv.xa.v.{tt}.{dim} acc0, v8, a0
+
+        la a3, test_{num}_data
+        msettypei a0, e8,false,false,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / 8
+        li a2, {vlen} * 4 / 8
+        mse32.xa.r.c acc0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen} * 4 /{sew}), ({sew} / 8), 0;
+        .popsection
+  
+  rule: co_verification      
+  rule_params:
+    test_mmv_v_tr_basic: np.array_equal(result, golden)
+    test_mmv_v_acc_basic: np.array_equal(result, golden)
+    test_mwmv_v_acc_basic: np.array_equal(result, golden)
+    test_mqmv_v_acc_basic: np.array_equal(result, golden)
+    test_mfmv_v_acc_basic: np.array_equal(result, golden)
+    test_mfwmv_v_acc_basic: np.array_equal(result, golden)
+    test_mfqmv_v_acc_basic: np.array_equal(result, golden)
+    test_mmv_tr_v_basic: np.array_equal(result, golden)
+    test_mmv_acc_v_basic: np.array_equal(result, golden)
+    test_mwmv_acc_v_basic: np.array_equal(result, golden)
+    test_mqmv_acc_v_basic: np.array_equal(result, golden)
+
+
+mmv_out_test:
+  <<: *default
+
+  cases:
+    test_mmv_v_tr_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16, 32]
+        dim: ["k", "n"]
+        tt: ["tr.r", "tr.c"]
+        tile_len: get_mmv_len(tt, dim, mlen, vlen, sew)
+        slice: get_mmv_slice(tt, mlen, vlen, sew)
+        rs1: np.random.randint(2^sew, size=(mlen//vlen, vlen//sew), dtype=bits_to_dtype_int(sew))
+
+
+    test_mmv_v_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16, 32]
+        eew: sew
+        dim: ["m"]
+        tt: ["xa.r", "xa.c"]
+        tile_len: get_mmv_len(tt, dim, mlen, vlen, eew)
+        slice: get_mmv_slice(tt, mlen, vlen, eew)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen//eew), dtype=bits_to_dtype_int(eew))
+
+    test_mwmv_v_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16]
+        eew: 2*sew
+        dim: ["m"]
+        tt: ["xa.r", "xa.c"]
+        tile_len: get_mmv_len(tt, dim, mlen, vlen, eew)
+        slice: get_mmv_slice(tt, mlen, vlen, eew)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen*2//eew), dtype=bits_to_dtype_int(eew))
+
+    test_mqmv_v_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8]
+        eew: 4*sew
+        dim: ["m"]
+        tt: ["xa.r", "xa.c"]
+        tile_len: get_mmv_len(tt, dim, mlen, vlen, eew)
+        slice: get_mmv_slice(tt, mlen, vlen, eew)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen*4//eew), dtype=bits_to_dtype_int(eew))
+
+    test_mfmv_v_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [16, 32]
+        eew: sew
+        dim: ["m"]
+        tt: ["xa.r", "xa.c"]
+        tile_len: get_mmv_len(tt, dim, mlen, vlen, eew)
+        slice: get_mmv_slice(tt, mlen, vlen, eew)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen//eew), dtype=bits_to_dtype_int(eew))
+
+    test_mfwmv_v_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [16]
+        eew: 2*sew
+        dim: ["m"]
+        tt: ["xa.r", "xa.c"]
+        tile_len: get_mmv_len(tt, dim, mlen, vlen, eew)
+        slice: get_mmv_slice(tt, mlen, vlen, eew)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen*2//eew), dtype=bits_to_dtype_int(eew))
+
+# mmv_in_test:
+#   <<: *default
+
+#   cases:
+#     test_mmv_tr_v_basic:
+#       matrix:
+#         mlen: mlen
+#         vlen: vlen
+#         sew: [8, 16, 32, 64]
+#         dim: ["k", "n"]
+#         tt: ["r", "c"]
+#         tile_len: 2
+#         slice: 0
+#         rs1: np.random.randint(2^sew, size=(vlen // sew), dtype=bits_to_dtype_int(sew))
+
+#     test_mmv_acc_v_basic:
+#       matrix:
+#         mlen: mlen
+#         vlen: vlen
+#         sew: [8, 16, 32, 64]
+#         dim: ["m"]
+#         tt: ["r", "c"]
+#         tile_len: 2
+#         slice: 0
+#         rs1: np.random.randint(2^sew, size=(vlen * 4// sew), dtype=bits_to_dtype_int(sew))
+
+#     test_mwmv_acc_v_basic:
+#       matrix:
+#         mlen: mlen
+#         vlen: vlen
+#         sew: [8, 16, 32]
+#         dim: ["m"]
+#         tt: ["r", "c"]
+#         tile_len: 4
+#         slice: 0
+#         rs1: np.random.randint(2^sew, size=(vlen * 4// (2*sew)), dtype=bits_to_dtype_int(2*sew))
+
+#     test_mqmv_acc_v_basic:
+#       matrix:
+#         mlen: mlen
+#         vlen: vlen
+#         sew: [8, 16]
+#         dim: ["m"]
+#         tt: ["r", "c"]
+#         tile_len: 4
+#         slice: 0
+#         rs1: np.random.randint(2^sew, size=(vlen *4// (4*sew)), dtype=bits_to_dtype_int(4*sew))
+
+        

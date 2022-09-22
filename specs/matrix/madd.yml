@@ -1,0 +1,98 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+
+  templates:
+    test_madd_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,false,maccd
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rd_data}
+        li a2, {tilen} * {eew} / 8
+        la a3, {rs1_data}
+        li a4, {tilen} * {eew} / 8
+
+        mle{eew}.xa.r.c acc0, (a1), a2
+        mle{eew}.xa.r.c acc1, (a3), a4
+
+        {madd}.mm acc0, acc1
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msettypei a0, e8,false,false,maccq
+        msettileni a0, {vlen} / 8
+        msettilemi a0, {mlen} / {vlen}
+        mse32.xa.r.c acc0, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_madd_overflow: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,false,maccd
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rd_data}
+        li a2, {tilen} * {eew} / 8
+        la a3, {rs1_data}
+        li a4, {tilen} * {eew} / 8
+
+        mle{eew}.xa.r.c acc0, (a1), a2
+        mle{eew}.xa.r.c acc1, (a3), a4
+
+        {madd}.mm acc0, acc1
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msettypei a0, e8,false,false,maccq
+        msettileni a0, {vlen} / 8
+        msettilemi a0, {mlen} / {vlen}
+        mse32.xa.r.c acc0, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+  
+  rule: co_verification      
+  rule_params:
+    test_madd_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_madd_overflow: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+
+madd_test:
+  <<: *default
+
+  cases:
+    test_madd_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        madd: ["madd", "mwadd", "mqadd", "mfadd", "mfwadd", "msub", "mwsub", "mqsub", "mfsub", "mfwsub", "mrsub", "mwrsub", "mqrsub", "mfrsub", "mfwrsub"]
+        sew: get_madd_sew(madd)
+        eew: get_madd_eew(madd, sew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rd: get_madd_src(madd, eew, tilem, tilen)
+        rs1: get_madd_src(madd, eew, tilem, tilen)
+
+    test_madd_overflow:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        madd: ["madd", "mwadd", "mqadd", "mfadd", "mfwadd", "msub", "mwsub", "mqsub", "mfsub", "mfwsub", "mrsub", "mwrsub", "mqrsub", "mfrsub", "mfwrsub"]
+        sew: get_madd_sew(madd)
+        eew: get_madd_eew(madd, sew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rd: get_random_src(madd, eew, tilem, tilen)
+        rs1: get_random_src(madd, eew, tilem, tilen)
+
+   

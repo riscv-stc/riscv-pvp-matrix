@@ -1,0 +1,517 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+
+  templates:
+    test_mload_tr_a_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},{mltr},false,maccq
+        msettilemi a0, {tilem}
+        msettileki a0, {tilek}
+        la a1, {rs1_data}
+        li a2, {stride}
+        la a3, test_{num}_data
+
+        mle{eew}.{tt}.{dim} tr0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        li a2, {tilek}*{eew}/8
+        mse{eew}.tr.r.{dim} tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilem}*{tilek}), ({eew} / 8), 0;
+        .popsection
+
+    test_mload_tr_b_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,{mrtr},maccq
+        msettileki a0, {tilek}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {stride}
+        la a3, test_{num}_data
+
+        mle{eew}.{tt}.{dim} tr0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        li a2, {tilen}*{eew}/8
+        mse{eew}.tr.r.{dim} tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilek}*{tilen}), ({eew} / 8), 0;
+        .popsection
+
+
+    test_mload_tr_a_stride: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},{mltr},false,maccq
+        msettilemi a0, {tilem}
+        msettileki a0, {tilek}
+        la a1, {rs1_data}
+        li a2, {stride}
+        la a3, test_{num}_data
+
+        mle{eew}.{tt}.{dim} tr0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        li a2, {tilek}*{eew}/8
+        mse{eew}.tr.r.{dim} tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilem}*{tilek}), ({eew} / 8), 0;
+        .popsection
+
+    test_mload_tr_b_stride: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,{mrtr},maccq
+        msettileki a0, {tilek}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {stride}
+        la a3, test_{num}_data
+
+        mle{eew}.{tt}.{dim} tr0, (a1), a2
+
+        msettypei a0, e{sew},false,false,maccq
+        li a2, {tilen}*{eew}/8
+        mse{eew}.tr.r.{dim} tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilek}*{tilen}), ({eew} / 8), 0;
+        .popsection
+
+        
+    test_mload_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {stride}
+
+        mle{eew}.{tt}.{dim} acc0, (a1), a2
+
+        li a0, 0
+        li a1, {tilem}
+        li a2, {tilen}
+        la a3, test_{num}_data
+      test_{num}_loop:
+        {mmv}.v.xa.r.n  v8, acc0, a0
+        vsetvli x0, a2, e{eew},m4,ta,ma
+        vse{eew}.v  v8, (a3)
+        addi a0, a0, 1
+        addi a3, a3, {tilen}*{eew}/8
+        bne a0, a1, test_{num}_loop
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilem}*{tilen}), ({eew} / 8), 0;
+        .popsection
+
+    test_mload_acc_stride: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {stride}
+        la a3, test_{num}_data
+
+        mle{eew}.{tt}.{dim} acc0, (a1), a2
+
+        li a0, 0
+        li a1, {tilem}
+        li a2, {tilen}
+        la a3, test_{num}_data
+      test_{num}_loop:
+        {mmv}.v.xa.r.n  v8, acc0, a0
+        vsetvli x0, a2, e{eew},m4,ta,ma
+        vse{eew}.v  v8, (a3)
+        addi a0, a0, 1
+        addi a3, a3, {tilen}*{eew}/8
+        bne a0, a1, test_{num}_loop
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilem}*{tilen}), ({eew} / 8), 0;
+        .popsection
+
+    test_mfload_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e{sew},false,false,maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {stride}
+
+        mfle{eew}.{tt}.{dim} acc0, (a1), a2
+
+        li a0, 0
+        li a1, {tilem}
+        li a2, {tilen}
+        la a3, test_{num}_data
+      test_{num}_loop:
+        {mfmv}.v.xa.r.n  v8, acc0, a0
+        vsetvli x0, a2, e{eew},m4,ta,ma
+        vse{eew}.v  v8, (a3)
+        addi a0, a0, 1
+        addi a3, a3, {tilen}*{eew}/8
+        bne a0, a1, test_{num}_loop
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({tilem}*{tilen}), ({eew} / 8), 0;
+        .popsection
+
+    test_mstore_tr_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        li a2, {vlen} / 8
+        msettypei a0, e{sew},false,false,maccd
+        msettileki a0, {vlen} / 8
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        mle{eew}.tr.r.{dim} tr0, (a1), a2
+        
+        msettypei a0, e{eew},{mltr},{mrtr},maccd
+        msettilemi a0, {tilem}
+        msettileki a0, {tilek}
+        msettileni a0, {tilen}
+        li a2, {stride}
+        la a3, test_{num}_data
+        mse{eew}.{tt}.{dim} tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill (128*{stride}*8/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mstore_tr_stride: |
+      test_{num}:
+        li TESTNUM, {num};
+        li a2, {vlen} / 8
+        msettypei a0, e{sew},false,false,maccd
+        msettileki a0, {vlen} / 8
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen} / {sew}
+        la a1, {rs1_data}
+        mle{eew}.tr.r.{dim} tr0, (a1), a2
+        
+        msettypei a0, e{eew},{mltr},{mrtr},maccd
+        msettilemi a0, {tilem}
+        msettileki a0, {tilek}
+        msettileni a0, {tilen}
+        li a2, {stride}
+        la a3, test_{num}_data
+        mse{eew}.{tt}.{dim} tr0, (a3), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill (128*{stride}*8/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mstore_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        li a2, {vlen} * {eew} / 8 / {sew}
+        msettypei a0, e{sew},false,false,maccd
+        msettileni a0, {vlen} / {sew}
+        msettilemi a0, {mlen} / {vlen}
+        la a1, {rs1_data}
+        mle{eew}.xa.r.c acc0, (a1), a2
+        
+        li a0, 0
+        li a1, {tilem}
+        li a2, {tilen}
+        la a3, test_{num}_data
+      test_{num}_loop:
+        {mmv}.v.xa.r.n  v8, acc0, a0
+        vsetvli x0, a2, e{eew},m4,ta,ma
+        vse{eew}.v  v8, (a3)
+        addi a0, a0, 1
+        addi a3, a3, {stride}
+        bne a0, a1, test_{num}_loop
+        
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*{stride}*8/{vlen}/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mstore_acc_stride: |
+      test_{num}:
+        li TESTNUM, {num};
+        li a2, {vlen} * {eew} / 8 / {sew}
+        msettypei a0, e{sew},false,false,maccd
+        msettileni a0, {vlen} / {sew}
+        msettilemi a0, {mlen} / {vlen}
+        la a1, {rs1_data}
+        mle{eew}.xa.r.c acc0, (a1), a2
+        
+        li a0, 0
+        li a1, {tilem}
+        li a2, {tilen}
+        la a3, test_{num}_data
+      test_{num}_loop:
+        {mmv}.v.xa.r.n  v8, acc0, a0
+        vsetvli x0, a2, e{eew},m4,ta,ma
+        vse{eew}.v  v8, (a3)
+        addi a0, a0, 1
+        addi a3, a3, {stride}
+        bne a0, a1, test_{num}_loop
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*{stride}*8/{vlen}/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_mfstore_acc_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        li a2, {vlen} * {eew} / 8 / {sew}
+        msettypei a0, e{sew},false,false,maccd
+        msettileni a0, {vlen} / {sew}
+        msettilemi a0, {mlen} / {vlen}
+        la a1, {rs1_data}
+        mfle{eew}.xa.r.c acc0, (a1), a2
+        
+        li a0, 0
+        li a1, {tilem}
+        li a2, {tilen}
+        la a3, test_{num}_data
+      test_{num}_loop:
+        {mfmv}.v.xa.r.n  v8, acc0, a0
+        vsetvli x0, a2, e{eew},m4,ta,ma
+        vse{eew}.v  v8, (a3)
+        addi a0, a0, 1
+        addi a3, a3, {stride}
+        bne a0, a1, test_{num}_loop
+        
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*{stride}*8/{vlen}/{eew}), ({eew} / 8), 0;
+        .popsection
+
+
+  
+  rule: co_verification      
+  rule_params:
+    test_mload_tr_a_basic: np.array_equal(result, golden)
+    test_mload_tr_b_basic: np.array_equal(result, golden)
+    test_mstore_tr_a_stride: np.array_equal(result, golden)
+    test_mstore_tr_b_stride: np.array_equal(result, golden)
+    test_mload_acc_basic: np.array_equal(result, golden)
+    test_mload_acc_stride: np.array_equal(result, golden)
+    test_mfload_acc_basic: np.array_equal(result, golden)
+    test_mstore_tr_basic: np.array_equal(result, golden)
+    test_mstore_acc_basic: np.array_equal(result, golden)
+    test_mstore_acc_stride: np.array_equal(result, golden)
+    test_mfstore_acc_basic: np.array_equal(result, golden)
+    
+
+mle_test:
+  <<: *default
+
+  cases:
+    test_mload_tr_a_basic :
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mltr: ["false", "true"]
+        dim: 'a'
+        sew: [8, 16]
+        eew: sew
+        tt: get_mload_tt(dim, mltr, "false")
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, 0, tilek, mltr, "false")[0]
+        rs1: get_mload_data(dim, eew, tilem, 0, tilek, stride, mltr, "false")
+
+    test_mload_tr_b_basic :
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mrtr: ["false", "true"]
+        dim: 'b'
+        sew: [8, 16]
+        eew: sew
+        tt: get_mload_tt(dim, "false", mrtr)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, 0,  tilen, tilek, "false", mrtr)[0]
+        rs1: get_mload_data(dim, eew, 0, tilen, tilek, stride, "false", mrtr)
+
+    test_mload_tr_a_stride :
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mltr: ["false", "true"]
+        dim: 'a'
+        sew: [8, 16]
+        eew: sew
+        tt: get_mload_tt(dim, mltr, "false")
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, 0, tilek, mltr, "false")
+        rs1: get_mload_data(dim, eew, tilem, 0, tilek, stride, mltr, "false")
+
+    test_mload_tr_b_stride :
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mrtr: ["false", "true"]
+        dim: 'b'
+        sew: [8, 16]
+        eew: sew
+        tt: get_mload_tt(dim, "false", mrtr)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, 0,  tilen, tilek, "false", mrtr)
+        rs1: get_mload_data(dim, eew, 0, tilen, tilek, stride, "false", mrtr)
+
+    test_mload_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16, 32]
+        eew: get_acc_load_eew(sew)
+        dim: ["c"]
+        tt: ["xa.r"]
+        mmv: get_acc_mmv(sew, eew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, 0)[0]
+        rs1: get_mload_data(dim, eew, tilem, tilen, 0, stride)
+
+    test_mload_acc_stride:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16, 32]
+        eew: get_acc_load_eew(sew)
+        dim: ["c"]
+        tt: ["xa.r"]
+        mmv: get_acc_mmv(sew, eew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, 0)
+        rs1: get_mload_data(dim, eew, tilem, tilen, 0, stride)
+
+    test_mfload_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [16, 32]
+        eew: get_acc_fload_eew(sew)
+        dim: ["c"]
+        tt: ["xa.r"]
+        mfmv: get_acc_mfmv(sew, eew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, 0)
+        rs1: get_mload_data(dim, eew, tilem, tilen, 0, stride)
+
+mse_test:
+  <<: *default
+
+  cases:
+    test_mstore_tr_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mltr: ["false", "true"]
+        mrtr: ["false", "true"]
+        sew: [8, 16]
+        eew: sew
+        dim: ["a", "b"]
+        tt: get_mload_tt(dim, mltr, mrtr)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, tilek, mltr, mrtr)[0]
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen // eew), dtype=bits_to_dtype_int(eew))
+
+    test_mstore_tr_stride:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mltr: ["false", "true"]
+        mrtr: ["false", "true"]
+        sew: [8, 16]
+        eew: sew
+        dim: ["a", "b"]
+        tt: get_mload_tt(dim, mltr, mrtr)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, tilek, mltr, mrtr)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen // eew), dtype=bits_to_dtype_int(eew))
+
+
+    test_mstore_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16, 32]
+        eew: get_acc_load_eew(sew)
+        dim: ["c"]
+        tt: ["xa.r"]
+        mmv: get_acc_mmv(sew, eew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, 0)[0]
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen//sew), dtype=bits_to_dtype_int(eew))
+    
+    test_mstore_acc_stride:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [8, 16, 32]
+        eew: get_acc_load_eew(sew)
+        dim: ["c"]
+        tt: ["xa.r"]
+        mmv: get_acc_mmv(sew, eew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, 0)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen//sew), dtype=bits_to_dtype_int(eew))
+
+    test_mfstore_acc_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        sew: [16, 32]
+        eew: get_acc_fload_eew(sew)
+        dim: ["c"]
+        tt: ["xa.r"]
+        mfmv: get_acc_mfmv(sew, eew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        stride: get_mload_stride(dim, eew, tilem, tilen, 0)
+        rs1: np.random.randint(2^eew, size=(mlen//vlen, vlen//sew), dtype=bits_to_dtype_int(eew))

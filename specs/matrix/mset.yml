@@ -1,0 +1,183 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+
+  templates:
+    test_msettype_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettype x0, x0;
+        li a0, ({msew} | {mrtr} << 3 | {mltr} << 4 | {maccq} << 30);
+        msettype x0, a0;
+        test_{num}_end:
+
+    test_msettype_mill: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettype x0, x0;
+        li a0, ({msew} | {mrtr} << 3 | {mltr} << 4 | {maccq} << 30);
+        msettype x0, a0;
+        test_{num}_end:
+
+    test_msettypei_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettype x0, x0;
+        msettypei x0, {msew},{mltr},{mrtr},{maccq};
+        test_{num}_end:
+
+    test_msettypei_mill: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettype x0, x0;
+        msettypei x0, {msew},{mltr},{mrtr},{maccq};
+        test_{num}_end:
+
+    test_msettilei_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei x0, e16,false,false,maccd
+        msettile{dim}i a2, {tile_len};
+        li a1, {tile_len}
+        beq a1, a2, test_{num}_end
+        j fail;
+        test_{num}_end:
+
+    test_msettilei_max: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei x0, e16,false,false,maccd
+        msettile{dim}i a2, {tile_len};
+        li a1, {tile_max}
+        beq a1, a2, test_{num}_end
+        j fail;
+        test_{num}_end:
+
+    test_msettile_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei x0, e16,false,false,maccd
+        li a1, {tile_len}
+        msettile{dim} a2, a1;
+        beq a1, a2, test_{num}_end
+        j fail;
+        test_{num}_end:
+
+    test_msettile_max: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei x0, e16,false,false,maccd
+        li a0, {tile_len}
+        msettile{dim} a2, a0;
+        li a1, {tile_max}
+        beq a1, a2, test_{num}_end
+        j fail;
+        test_{num}_end:
+
+    test_msettile_rs1_eq_x0: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei x0, e16,false,false,maccd
+        li a1, {tile_max}
+        msettile{dim} a2, x0;
+        beq a1, a2, test_{num}_end
+        j fail;
+        test_{num}_end:
+
+    test_msettile_rs1_rd_eq_x0: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei x0, e16,false,false,maccd
+        msettile{dim}i a1, {tile_origin}
+        msettile{dim} x0, x0;
+        csrr a2, tile_{dim}
+        beq a1, a2, test_{num}_end
+        j fail;
+        test_{num}_end:
+
+
+
+  rule: co_verification
+
+mtype_test:
+  <<: *default
+ 
+  cases:
+    test_msettype_basic:
+      matrix:
+        msew: [0, 1, 2]
+        mrtr: [0, 1]
+        mltr: [0, 1]
+        maccq: [0, 1]
+
+    test_msettype_mill:
+      matrix:
+        msew: [3]
+        mrtr: [0, 1]
+        mltr: [0, 1]
+        maccq: [0, 1]
+
+    test_msettypei_basic:
+      matrix:
+        msew: ["e8", "e16", "e32"]
+        mrtr: ["true", "false"]
+        mltr: ["true", "false"]
+        maccq: ["maccq", "maccd"]
+
+    test_msettypei_mill:
+      matrix:
+        msew: ["e64"]
+        mrtr: ["true", "false"]
+        mltr: ["true", "false"]
+        maccq: ["maccq", "maccd"]
+
+msettilemi_test:
+  <<: *default
+
+  cases:
+    test_msettilei_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        dim: ['m', 'k', 'n']
+        tile_max: get_tile_max(mlen, vlen, dim, 16)
+        tile_len: list(np.random.uniform(0, tile_max, 10).astype(np.int32))
+      
+    test_msettilei_max:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        dim: ['m', 'k', 'n']
+        tile_max: get_tile_max(mlen, vlen, dim, 16)
+        tile_len: list(np.random.uniform(tile_max, 1024, 10).astype(np.int32))
+
+
+    test_msettile_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        dim: ['m', 'k', 'n']
+        tile_max: get_tile_max(mlen, vlen, dim, 16)
+        tile_len: list(np.random.uniform(0, tile_max, 10).astype(np.int32))
+    
+    test_msettile_max:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        dim: ['m', 'k', 'n']
+        tile_max: get_tile_max(mlen, vlen, dim, 16)
+        tile_len: list(np.random.uniform(tile_max, 1024, 10).astype(np.int32))
+
+    test_msettile_rs1_eq_x0:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        dim: ['m', 'k', 'n']
+        tile_max: get_tile_max(mlen, vlen, dim, 16)
+    
+    test_msettile_rs1_rd_eq_x0:
+      matrix:
+        dim: ['m', 'k', 'n']
+        tile_origin: [3]
+        

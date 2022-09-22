@@ -1,0 +1,23 @@
+processor:
+  xlen: 64
+  flen: 64
+  vlen: 128
+  elen: 64
+  slen: 128
+  mlen: 1024
+
+compile:
+  path: clang
+  cc: f'{path} --target=riscv{xlen}-unknown-elf -mno-relax -fuse-ld=lld -march=rv{xlen}gv0p10zfh0p1 -menable-experimental-extensions'
+  defines: f'-DXLEN={xlen} -DVLEN={vlen}'
+  cflags: -g -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles
+  incs: f" -I{pkgroot}/env/p -I{pkgroot}/macros/scalar -I{pkgroot}/macros/matrix"
+  linkflags: f" -T{pkgroot}/env/p/link.ld"
+  objdump: riscv64-unknown-elf-objdump -S -D
+  is_objdump: True
+  readelf: riscv64-unknown-elf-readelf  
+
+spike:
+  path: spike
+  cmd: f'{path} --isa=rv{xlen}gcv_zfh --varch=vlen:{vlen},elen:{elen},slen:{slen},mlen:{mlen}'
+

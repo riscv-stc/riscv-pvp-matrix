@@ -1,0 +1,3 @@
+[submodule "rvpvp"]
+	path = rvpvp
+	url = ../riscv-pvp
