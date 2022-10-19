@@ -4,10 +4,18 @@ _: &default
     #include "exception.h"
 
   templates:
-    test_madd_basic: |
+    test_maddc_basic: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei a0, e{sew},false,false,maccd
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
         msettilemi a0, {tilem}
         msettileni a0, {tilen}
         la a1, {rd_data}
@@ -15,17 +23,14 @@ _: &default
         la a3, {rs1_data}
         li a4, {tilen} * {eew} / 8
 
-        mle{eew}.xa.r.c acc0, (a1), a2
-        mle{eew}.xa.r.c acc1, (a3), a4
+        mlce{eew}.m acc0, (a1), a2
+        mlce{eew}.m acc1, (a3), a4
 
-        {madd}.mm acc0, acc1
+        {maddc}.mm acc0, acc1
 
         li a2, {vlen} * 4 / 8
         la a5, test_{num}_data
-        msettypei a0, e8,false,false,maccq
-        msettileni a0, {vlen} / 8
-        msettilemi a0, {mlen} / {vlen}
-        mse32.xa.r.c acc0, (a5), a2
+        msce{eew}.m acc0, (a5), a2
 
         .pushsection .data, 1;
         .balign 1
@@ -33,10 +38,18 @@ _: &default
         .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
         .popsection
 
-    test_madd_overflow: |
+    test_maddc_overflow: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei a0, e{sew},false,false,maccd
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+        
+        msettypei a0, e{sew},maccq
         msettilemi a0, {tilem}
         msettileni a0, {tilen}
         la a1, {rd_data}
@@ -44,17 +57,14 @@ _: &default
         la a3, {rs1_data}
         li a4, {tilen} * {eew} / 8
 
-        mle{eew}.xa.r.c acc0, (a1), a2
-        mle{eew}.xa.r.c acc1, (a3), a4
+        mlce{eew}.m acc0, (a1), a2
+        mlce{eew}.m acc1, (a3), a4
 
-        {madd}.mm acc0, acc1
+        {maddc}.mm acc0, acc1
 
         li a2, {vlen} * 4 / 8
         la a5, test_{num}_data
-        msettypei a0, e8,false,false,maccq
-        msettileni a0, {vlen} / 8
-        msettilemi a0, {mlen} / {vlen}
-        mse32.xa.r.c acc0, (a5), a2
+        msce{eew}.m acc0, (a5), a2
 
         .pushsection .data, 1;
         .balign 1
@@ -64,35 +74,35 @@ _: &default
   
   rule: co_verification      
   rule_params:
-    test_madd_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
-    test_madd_overflow: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_maddc_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_maddc_overflow: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
 
-madd_test:
+maddc_test:
   <<: *default
 
   cases:
-    test_madd_basic:
+    test_maddc_basic:
       matrix:
         mlen: mlen
         vlen: vlen
-        madd: ["madd", "mwadd", "mqadd", "mfadd", "mfwadd", "msub", "mwsub", "mqsub", "mfsub", "mfwsub", "mrsub", "mwrsub", "mqrsub", "mfrsub", "mfwrsub"]
-        sew: get_madd_sew(madd)
-        eew: get_madd_eew(madd, sew)
+        maddc: ["maddc", "mwaddc", "mqaddc", "mfaddc", "mfwaddc", "msubc", "mwsubc", "mqsubc", "mfsubc", "mfwsubc", "mrsubc", "mwrsubc", "mqrsubc", "mfrsubc", "mfwrsubc"]
+        sew: get_maddc_sew(maddc)
+        eew: get_maddc_eew(maddc, sew)
         tilem: [1, mlen//vlen//2,  mlen//vlen]
         tilen: [1, vlen//sew//2, vlen//sew]
-        rd: get_madd_src(madd, eew, tilem, tilen)
-        rs1: get_madd_src(madd, eew, tilem, tilen)
+        rd: get_maddc_src(maddc, eew, tilem, tilen)
+        rs1: get_maddc_src(maddc, eew, tilem, tilen)
 
-    test_madd_overflow:
+    test_maddc_overflow:
       matrix:
         mlen: mlen
         vlen: vlen
-        madd: ["madd", "mwadd", "mqadd", "mfadd", "mfwadd", "msub", "mwsub", "mqsub", "mfsub", "mfwsub", "mrsub", "mwrsub", "mqrsub", "mfrsub", "mfwrsub"]
-        sew: get_madd_sew(madd)
-        eew: get_madd_eew(madd, sew)
+        maddc: ["maddc", "mwaddc", "mqaddc", "mfaddc", "mfwaddc", "msubc", "mwsubc", "mqsubc", "mfsubc", "mfwsubc", "mrsubc", "mwrsubc", "mqrsubc", "mfrsubc", "mfwrsubc"]
+        sew: get_maddc_sew(maddc)
+        eew: get_maddc_eew(maddc, sew)
         tilem: [1, mlen//vlen//2,  mlen//vlen]
         tilen: [1, vlen//sew//2, vlen//sew]
-        rd: get_random_src(madd, eew, tilem, tilen)
-        rs1: get_random_src(madd, eew, tilem, tilen)
+        rd: get_random_src(maddc, eew, tilem, tilen)
+        rs1: get_random_src(maddc, eew, tilem, tilen)
 
    

@@ -8,7 +8,7 @@ _: &default
       test_{num}:
         li TESTNUM, {num};
         msettype x0, x0;
-        li a0, ({msew} | {mrtr} << 3 | {mltr} << 4 | {maccq} << 30);
+        li a0, ({msew} | {maccq} << 3);
         msettype x0, a0;
         test_{num}_end:
 
@@ -16,7 +16,7 @@ _: &default
       test_{num}:
         li TESTNUM, {num};
         msettype x0, x0;
-        li a0, ({msew} | {mrtr} << 3 | {mltr} << 4 | {maccq} << 30);
+        li a0, ({msew} | {maccq} << 3);
         msettype x0, a0;
         test_{num}_end:
 
@@ -24,20 +24,20 @@ _: &default
       test_{num}:
         li TESTNUM, {num};
         msettype x0, x0;
-        msettypei x0, {msew},{mltr},{mrtr},{maccq};
+        msettypei x0, {msew},{maccq};
         test_{num}_end:
 
     test_msettypei_mill: |
       test_{num}:
         li TESTNUM, {num};
         msettype x0, x0;
-        msettypei x0, {msew},{mltr},{mrtr},{maccq};
+        msettypei x0, {msew},{maccq};
         test_{num}_end:
 
     test_msettilei_basic: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei x0, e16,false,false,maccd
+        msettypei x0, e16,maccq
         msettile{dim}i a2, {tile_len};
         li a1, {tile_len}
         beq a1, a2, test_{num}_end
@@ -47,7 +47,7 @@ _: &default
     test_msettilei_max: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei x0, e16,false,false,maccd
+        msettypei x0, e16,maccq
         msettile{dim}i a2, {tile_len};
         li a1, {tile_max}
         beq a1, a2, test_{num}_end
@@ -57,7 +57,7 @@ _: &default
     test_msettile_basic: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei x0, e16,false,false,maccd
+        msettypei x0, e16,maccq
         li a1, {tile_len}
         msettile{dim} a2, a1;
         beq a1, a2, test_{num}_end
@@ -67,7 +67,7 @@ _: &default
     test_msettile_max: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei x0, e16,false,false,maccd
+        msettypei x0, e16,maccq
         li a0, {tile_len}
         msettile{dim} a2, a0;
         li a1, {tile_max}
@@ -78,7 +78,7 @@ _: &default
     test_msettile_rs1_eq_x0: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei x0, e16,false,false,maccd
+        msettypei x0, e16,maccq
         li a1, {tile_max}
         msettile{dim} a2, x0;
         beq a1, a2, test_{num}_end
@@ -88,7 +88,7 @@ _: &default
     test_msettile_rs1_rd_eq_x0: |
       test_{num}:
         li TESTNUM, {num};
-        msettypei x0, e16,false,false,maccd
+        msettypei x0, e16,maccq
         msettile{dim}i a1, {tile_origin}
         msettile{dim} x0, x0;
         csrr a2, tile_{dim}
@@ -107,29 +107,21 @@ mtype_test:
     test_msettype_basic:
       matrix:
         msew: [0, 1, 2]
-        mrtr: [0, 1]
-        mltr: [0, 1]
         maccq: [0, 1]
 
     test_msettype_mill:
       matrix:
         msew: [3]
-        mrtr: [0, 1]
-        mltr: [0, 1]
         maccq: [0, 1]
 
     test_msettypei_basic:
       matrix:
-        msew: ["e8", "e16", "e32"]
-        mrtr: ["true", "false"]
-        mltr: ["true", "false"]
+        msew: ["e8", "e16", "e32", "e64"]
         maccq: ["maccq", "maccd"]
 
     test_msettypei_mill:
       matrix:
-        msew: ["e64"]
-        mrtr: ["true", "false"]
-        mltr: ["true", "false"]
+        msew: ["e128"]
         maccq: ["maccq", "maccd"]
 
 msettilemi_test:

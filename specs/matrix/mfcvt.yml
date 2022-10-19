@@ -1,0 +1,145 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+
+  templates:
+    test_mfcvt_f_f_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilen} * {seew} / 8
+
+        mlce{seew}.m acc1, (a1), a2
+
+        {mfcvt} acc0, acc1
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msce{deew}.m acc0, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 4
+      test_{num}_data:
+        .fill ({mlen}*4/{deew}), ({deew} / 8), 0;
+        .popsection
+
+    test_mfcvt_f_x_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilen} * {seew} / 8
+
+        mlce{seew}.m acc1, (a1), a2
+
+        {mfcvt} acc0, acc1
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msce{deew}.m acc0, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 4
+      test_{num}_data:
+        .fill ({mlen}*4/{deew}), ({deew} / 8), 0;
+        .popsection
+
+    test_mfcvt_x_f_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilen} * {seew} / 8
+
+        mlce{seew}.m acc1, (a1), a2
+
+        {mfcvt} acc0, acc1
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msce{deew}.m acc0, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 4
+      test_{num}_data:
+        .fill ({mlen}*4/{deew}), ({deew} / 8), 0;
+        .popsection
+  
+  rule: co_verification      
+  rule_params:
+    test_mfcvt_f_f_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_mfcvt_f_x_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_mfcvt_x_f_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+
+
+mfcvt_test:
+  <<: *default
+
+  cases:
+    test_mfcvt_f_f_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mfcvt: ["mfncvtc.f.fw.m", "mfwcvtc.fw.f.m"]
+        sew: get_mfcvt_sew(mfcvt)
+        seew: get_mfcvt_seew(mfcvt, sew)
+        deew: get_mfcvt_deew(mfcvt, sew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rs1: get_mfcvt_src(mfcvt, seew, tilem, tilen)
+
+    test_mfcvt_f_x_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mfcvt: ["mfcvtc.f.x.m", "mfncvtc.f.xw.m", "mfncvtc.f.xq.m", "mfwcvtc.fw.x.m",  "mfcvtc.fw.xw.m", "mfncvtc.fw.xq.m"]
+        sew: get_mfcvt_sew(mfcvt)
+        seew: get_mfcvt_seew(mfcvt, sew)
+        deew: get_mfcvt_deew(mfcvt, sew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rs1: get_mfcvt_src(mfcvt, seew, tilem, tilen)
+
+    test_mfcvt_x_f_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mfcvt: ["mfcvtc.x.f.m", "mfwcvtc.xw.f.m", "mfwcvtc.xq.f.m", "mfncvtc.x.fw.m", "mfcvtc.xw.fw.m", "mfwcvtc.xq.fw.m"]
+        sew: get_mfcvt_sew(mfcvt)
+        seew: get_mfcvt_seew(mfcvt, sew)
+        deew: get_mfcvt_deew(mfcvt, sew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rs1: get_mfcvt_src(mfcvt, seew, tilem, tilen)

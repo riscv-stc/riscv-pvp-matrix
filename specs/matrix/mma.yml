@@ -1,0 +1,110 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+    #include "test_macros.h"
+
+  templates:
+    test_mma_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileki a0, {tilek}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilek} * {sew} / 8
+        la a3, {rs2_data}
+        li a4, {tilen} * {sew} / 8
+
+        mlae{sew}.m tr0, (a1), a2
+        mlbe{sew}.m tr1, (a3), a4
+
+        {mma}.mm acc0, tr0, tr1
+            
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        msce{eew}.m acc0, (a3), a4
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+  
+    test_mfma_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+        
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileki a0, {tilek}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilek} * {sew} / 8
+        la a3, {rs2_data}
+        li a4, {tilen} * {sew} / 8
+
+        mlae{sew}.m tr0, (a1), a2
+        mlbe{sew}.m tr1, (a3), a4
+
+        {mma}.mm acc0, tr0, tr1
+            
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        msce{eew}.m acc0, (a3), a4
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+
+  rule: co_verification      
+  rule_params:
+    test_mma_basic: np.allclose( result, golden, rtol=1e-2, atol=2e-1, equal_nan=True)
+    test_mfma_basic: np.allclose( result, golden, rtol=1e-2, atol=2e-1, equal_nan=True)
+
+mma_test:
+  <<: *default
+
+  cases:
+    test_mma_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mma: ["mma", "mwma", "mqma"]
+        sew: [8]
+        eew: get_mma_eew(mma, sew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        rs1: get_mma_src1(mma, sew, tilem, tilek)
+        rs2: get_mma_src2(mma, sew, tilek, tilen)
+
+    test_mfma_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        mma: ["mfma", "mfwma"]
+        sew: [16]
+        eew: get_mma_eew(mma, sew)
+        tilem: get_mload_len("tilem", mlen, vlen, sew)
+        tilen: get_mload_len("tilen", mlen, vlen, sew)
+        tilek: get_mload_len("tilek", mlen, vlen, sew)
+        rs1: get_mma_src1(mma, sew, tilem, tilek)
+        rs2: get_mma_src2(mma, sew, tilek, tilen)

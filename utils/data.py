@@ -6,9 +6,9 @@ import jax.numpy as jnp
 
 ## matrix
 def get_tile_max(mlen, vlen, dim, msew):
-    if dim == 'm':
+    if 'm' in dim:
         return mlen // vlen
-    elif dim == 'n':
+    elif 'n' in dim:
         return vlen // msew
     else:
         return min(mlen//vlen, vlen//msew)
@@ -30,50 +30,40 @@ def bits_to_dtype_float(sew):
     int_dtype_dict = { 16: np.float16, 32: np.float32, 64: np.float64}
     return int_dtype_dict[sew]
 
-def get_mload_tt(dim, mltr, mrtr):
-    if dim == 'a' :
-        if mltr == "true":
-            return ["tr.c"]
-        else:
-            return ["tr.r"]
-    elif dim == 'b':
-        if mrtr == 'true':
-            return ["tr.c"]
-        else:
-            return ["tr.r"]
-    elif dim == 'c':
-         return ["xa.r"]
-
-def get_mload_data(dim, eew, tilem, tilen, tilek, stride_byte, mltr='false', mrtr='false'):
+def get_mload_data(dim, eew, tilem, tilen, tilek, stride_byte):
     stride_ele = stride_byte // (eew // 8)
-    if dim == "c":
+    if dim == "ct":
+        return np.random.randint(2^eew, size=(tilen, stride_ele), dtype=bits_to_dtype_int(eew))
+    elif dim == "c":
         return np.random.randint(2^eew, size=(tilem, stride_ele), dtype=bits_to_dtype_int(eew))
+    elif dim == "at":
+        return np.random.randint(2^eew, size=(tilek, stride_ele), dtype=bits_to_dtype_int(eew))
     elif dim == "a":
-        if mltr == "true":
-            return np.random.randint(2^eew, size=(tilek, stride_ele), dtype=bits_to_dtype_int(eew))
-        else:
-            return np.random.randint(2^eew, size=(tilem, stride_ele), dtype=bits_to_dtype_int(eew))
+        return np.random.randint(2^eew, size=(tilem, stride_ele), dtype=bits_to_dtype_int(eew))
+    elif dim == "bt":
+        return np.random.randint(2^eew, size=(tilen, stride_ele), dtype=bits_to_dtype_int(eew))
     elif dim == "b":
-        if mrtr == "true":
-            return np.random.randint(2^eew, size=(tilen, stride_ele), dtype=bits_to_dtype_int(eew))
-        else:
-            return np.random.randint(2^eew, size=(tilek, stride_ele), dtype=bits_to_dtype_int(eew))
+        return np.random.randint(2^eew, size=(tilek, stride_ele), dtype=bits_to_dtype_int(eew))
     else:
         return np.random.randint(2^eew, size=(tilem, stride_ele), dtype=bits_to_dtype_int(eew))
 
-def get_mload_stride(dim, eew, tilem, tilen, tilek, mltr="false", mrtr="false"):
-    if dim == 'a':
-        if mltr == "true":
-            stride = tilem * eew // 8
-        else:
-            stride =  tilek * eew // 8
-    elif dim == 'b' :
-        if mrtr == "true":
-            stride =  tilek * eew // 8
-        else:
-            stride =  tilen * eew // 8
-    elif dim == 'c' :
+def get_mstore_data(dim, height, width, eew) :
+    return np.random.randint(2^eew, size=(height, width), dtype=bits_to_dtype_int(eew))
+
+
+def get_mload_stride(dim, eew, tilem, tilen, tilek):
+    if dim == 'at':
+        stride = tilem * eew // 8
+    elif dim == 'a':
+        stride =  tilek * eew // 8
+    elif dim == 'bt' :
+        stride =  tilek * eew // 8
+    elif dim == 'b':
         stride =  tilen * eew // 8
+    elif dim == 'ct' :
+        stride = tilem * eew // 8
+    elif dim == 'c' :
+        stride = tilen * eew // 8
     else :
         return 0
     return [stride, stride + eew // 8, stride * 2]
@@ -121,44 +111,44 @@ def get_mmv_slice(tt, mlen, vlen, sew):
     return [0, slice_max//2-1, slice_max-1]
 
 
-def get_mopa_sew(insn):
-    if insn == "mfwopa":
+def get_mma_sew(insn):
+    if insn == "mfwma":
         return [16]
-    elif insn == "mfopa":
+    elif insn == "mfma":
         return [16, 32]
-    elif insn == "mqopa":
+    elif insn == "mqma":
         return [8]
-    elif insn == "mwopa":
+    elif insn == "mwma":
         return [8, 16]
-    elif insn == "mopa":
+    elif insn == "mma":
         return [8, 16, 32]
     else:
         return [16]
 
-def get_mopa_eew(mopa, sew):
-    if 'q' in mopa:
+def get_mma_eew(mma, sew):
+    if 'q' in mma:
         return 4*sew
-    elif 'w' in mopa:
+    elif 'w' in mma:
         return 2*sew
     else:
         return sew
 
-def get_mopa_src1(insn, eew, tilem, tilek):
+def get_mma_src1(insn, eew, tilem, tilek) :
     if 'f' in insn:
         return np.random.random((tilem, tilek)).astype(bits_to_dtype_float(eew)) * 2 - 1
     else:
         return np.random.randint(-2, 3, size=(tilem, tilek), dtype=bits_to_dtype_int(eew))
 
-def get_mopa_src2(insn, eew, tilek, tilen):
+def get_mma_src2(insn, eew, tilek, tilen):
     if 'f' in insn:
         return np.random.random((tilek, tilen)).astype(bits_to_dtype_float(eew)) * 2 - 1
     else:
         return np.random.randint(-2, 3, size=(tilek, tilen), dtype=bits_to_dtype_int(eew))
 
-def get_mopa_mmv(mopa):
-    if 'q' in mopa:
+def get_mopa_mmv(mma):
+    if 'q' in mma:
         return "mqmv"
-    elif 'w' in mopa:
+    elif 'w' in mo:
         return "mwmv"
     else:
         return "mmv" 
@@ -211,7 +201,7 @@ def get_acc_mfmv(sew, eew):
     else:
         return "mfqmv" 
 
-def get_madd_sew(insn):
+def get_maddc_sew(insn):
     if "fw" in insn:
         return [16]
     elif "f" in insn:
@@ -223,7 +213,7 @@ def get_madd_sew(insn):
     else:
         return [8, 16, 32]
 
-def get_madd_eew(insn, sew):
+def get_maddc_eew(insn, sew):
     if "w" in insn:
         return 2*sew
     elif "q" in insn:
@@ -232,7 +222,7 @@ def get_madd_eew(insn, sew):
         return sew
 
 
-def get_madd_src(insn, eew, tilem, tilen):
+def get_maddc_src(insn, eew, tilem, tilen):
     if 'f' in insn:
         return np.random.random((tilem, tilen)).astype(bits_to_dtype_float(eew)) * 2 - 1
     else:
@@ -244,3 +234,92 @@ def get_random_src(insn, eew, tilem, tilen):
         return np.random.random((tilem, tilen)).astype(bits_to_dtype_float(eew)) * 2 - 1
     else:
         return np.random.randint(-pow(2, eew-1), pow(2, eew-1), size=(tilem, tilen), dtype=bits_to_dtype_int(eew))
+
+
+def get_memulc_sew(insn):
+    if "fw" in insn:
+        return [16]
+    elif "f" in insn:
+        return [16, 32]
+    elif "w" in insn:
+        return [8, 16]
+    elif "q" in insn:
+        return [8]
+    else:
+        return [8, 16, 32]
+
+def get_memulc_eew(insn, sew):
+    if "w" in insn:
+        return 2*sew
+    elif "q" in insn:
+        return 4*sew
+    else:
+        return sew
+
+def get_memulc_ld(eew):
+    if eew == 8:
+        return "lb"
+    elif eew == 16:
+        return "lh"
+    elif eew == 32:
+        return "lw"
+    elif eew == 64:
+        return "ld"
+
+def get_memulc_fld(eew):
+    if eew == 16:
+        return "flh"
+    elif eew == 32:
+        return "flw"
+    elif eew == 64:
+        return "fld"
+        
+
+def get_memulc_src1(insn, eew, tilem, tilen):
+    if 'f' in insn:
+        return np.random.random((tilem, tilen)).astype(bits_to_dtype_float(eew)) * 2 - 1
+    else:
+        return np.random.randint(10, size=(tilem, tilen), dtype=bits_to_dtype_int(eew))
+
+def get_memulc_src2(insn, eew, num):
+    ret = []
+    for i in range(num):
+        if 'f' in insn:
+            ret.append(np.random.random(1).astype(bits_to_dtype_float(eew))*2-1)
+        else:
+            ret.append(np.random.randint(0, 2^eew, 1, dtype=bits_to_dtype_int(eew)))
+
+    return ret
+
+
+def get_mfcvt_sew(insn):
+    insn_name = insn.split('.')[0]
+    if 'w' in insn_name or 'n' in insn_name:
+        return [16]
+    else:
+        return [16, 32]
+
+def get_mfcvt_seew(insn, sew):
+    insn_src = insn.split('.')[2]
+    if 'q' in insn_src:
+        return 4*sew
+    elif 'w' in insn_src:
+        return 2*sew
+    else:
+        return sew
+
+def get_mfcvt_deew(insn, sew):
+    insn_dst = insn.split('.')[1]
+    if 'q' in insn_dst:
+        return 4*sew
+    elif 'w' in insn_dst:
+        return 2*sew
+    else:
+        return sew
+
+def get_mfcvt_src(insn, seew, tilem, tilen):
+    insn_src = insn.split('.')[2]
+    if 'f' in insn_src:
+        return np.random.randint(0, 2^seew, (tilem, tilen)).astype(bits_to_dtype_float(seew))
+    else:
+        return np.random.randint(0, 2^seew, (tilem, tilen)).astype(bits_to_dtype_int(seew))

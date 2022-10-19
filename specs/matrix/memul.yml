@@ -1,0 +1,155 @@
+_: &default
+  env: RVTEST_RV64UV
+  head: |
+    #include "exception.h"
+
+  templates:
+    test_memulc_mx_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilen} * {eew} / 8
+
+        mlce{eew}.m acc0, (a1), a2
+        la a0, {rs2_data}
+        {ld} a2, (a0)
+
+        {memulc}.mx acc1, acc0, a2
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msce{eew}.m acc1, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_memulc_mf_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilen} * {eew} / 8
+
+        mlce{eew}.m acc0, (a1), a2
+        la a2, {rs2_data}
+        {fld} ft0, (a2)
+
+        {memulc}.mf acc1, acc0, ft0
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msce{eew}.m acc1, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    test_memulc_mi_basic: |
+      test_{num}:
+        li TESTNUM, {num};
+
+        msettypei a0, e8,maccq
+        msettilemi a0, {mlen} / {vlen}
+        msettileni a0, {vlen}/{sew}
+        la a3, test_{num}_data
+        li a4, {vlen} * 4 / 8
+        mlce32.m acc0, (a3), a4
+
+        msettypei a0, e{sew},maccq
+        msettilemi a0, {tilem}
+        msettileni a0, {tilen}
+        la a1, {rs1_data}
+        li a2, {tilen} * {eew} / 8
+
+        mlce{eew}.m acc0, (a1), a2
+
+        {memulc}.mi acc1, acc0, {rs2}
+
+        li a2, {vlen} * 4 / 8
+        la a5, test_{num}_data
+        msce{eew}.m acc1, (a5), a2
+
+        .pushsection .data, 1;
+        .balign 1
+      test_{num}_data:
+        .fill ({mlen}*4/{eew}), ({eew} / 8), 0;
+        .popsection
+
+    
+
+  
+  rule: co_verification      
+  rule_params:
+    test_memulc_mx_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_memulc_mf_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+    test_memulc_mi_basic: np.allclose( result, golden, rtol=1e-3, atol=1e-3, equal_nan=True)
+
+memulc_test:
+  <<: *default
+
+  cases:
+    test_memulc_mx_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        memulc: ["memulc", "mwemulc", "mqemulc"]
+        sew: get_memulc_sew(memulc)
+        eew: get_memulc_eew(memulc, sew)
+        ld: get_memulc_ld(eew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rs1: get_memulc_src1(memulc, eew, tilem, tilen)
+        rs2: get_memulc_src2(memulc, eew, 5)
+
+    test_memulc_mf_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        memulc: ["mfemulc", "mfwemulc"]
+        sew: get_memulc_sew(memulc)
+        eew: get_memulc_eew(memulc, sew)
+        fld: get_memulc_fld(eew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rs1: get_memulc_src1(memulc, eew, tilem, tilen)
+        rs2: get_memulc_src2(memulc, eew, 5)
+
+    test_memulc_mi_basic:
+      matrix:
+        mlen: mlen
+        vlen: vlen
+        memulc: ["memulc", "mwemulc", "mqemulc"]
+        sew: get_memulc_sew(memulc)
+        eew: get_memulc_eew(memulc, sew)
+        ld: get_memulc_ld(eew)
+        tilem: [1, mlen//vlen//2,  mlen//vlen]
+        tilen: [1, vlen//sew//2, vlen//sew]
+        rs1: get_memulc_src1(memulc, eew, tilem, tilen)
+        rs2: list(np.linspace(0, 31, 5, dtype=bits_to_dtype_int(eew)))
+   
